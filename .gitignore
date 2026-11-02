@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+/public/index.html
+/public/assets/index-*.css
+/public/assets/index-*.js

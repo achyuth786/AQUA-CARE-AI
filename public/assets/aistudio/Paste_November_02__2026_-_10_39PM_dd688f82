@@ -1,0 +1,1031 @@
+# MASTER PROJECT PROMPT: AQUACARE AI
+
+## 1. PROJECT IDENTITY
+
+Project Name: AquaCare AI
+
+Full Title: AquaCare AI – Intelligent Vannamei Shrimp Farming Monitoring, AI Health Screening, Smart Farm Management and Harvest Prediction Ecosystem.
+
+Project Type: Full-stack AI-powered aquaculture technology platform.
+
+Target Users:
+- Vannamei shrimp farmers.
+- Aquaculture farm owners.
+- Aquaculture consultants and experts.
+- Laboratory professionals.
+- Platform administrators.
+
+Initial Target Region: West Godavari district, Andhra Pradesh, India.
+
+Languages: English and Telugu.
+
+Primary Goal:
+
+Build a complete, intelligent, mobile-first aquaculture management ecosystem that helps vannamei shrimp farmers manage their entire farming lifecycle, from pond preparation and seed stocking to daily farm management, health monitoring, growth prediction, harvest planning and financial analysis.
+
+This must be a real, functional software product, not just a static dashboard or UI prototype.
+
+The platform should combine AI, machine learning, data analytics, farming calculations, predictive intelligence and a user-friendly interface.
+
+---
+
+# 2. TECHNOLOGY STACK
+
+Use modern, maintainable and production-oriented technologies.
+
+## Frontend
+- React.js
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui or an equivalent accessible component system
+- Lucide icons
+- React Router
+- TanStack Query for API state management
+- React Hook Form
+- Zod validation
+- Recharts for interactive analytics
+- i18next for English and Telugu translation
+- Progressive Web App (PWA) support
+
+## Backend
+- Python
+- FastAPI
+- Pydantic
+- SQLAlchemy ORM
+- Alembic database migrations
+- REST API architecture
+- JWT authentication with refresh-token handling
+- Role-based access control
+- Background jobs for scheduled reports and notifications where needed
+
+## Database
+- MySQL 8+
+- Proper relational database design
+- Foreign keys
+- Indexing
+- Transactions
+- Database migrations
+- Secure multi-farmer data separation
+
+## Artificial Intelligence
+- Google Gemini API through a secure backend integration
+- Gemini multimodal capabilities for shrimp image screening
+- Python machine learning with scikit-learn
+- PyTorch for future custom image classification models
+- Pandas and NumPy for analytics
+- Model evaluation and prediction confidence reporting
+
+Do not expose Gemini API keys or database credentials in frontend code.
+
+Use environment variables and an example .env file.
+
+Do not hardcode API keys, passwords or secrets.
+
+## Additional integrations
+Design the system so that it can later integrate with:
+- Weather APIs.
+- IoT water-quality sensors.
+- MQTT communication.
+- Camera-based pond monitoring.
+- Cloud image storage.
+- Email and notification services.
+- Authorized aquaculture market-price data providers.
+- Laboratory report integrations.
+
+Do not pretend an external integration is operational until it has actually been configured and tested.
+
+---
+
+# 3. USER ROLES AND AUTHENTICATION
+
+Implement three major roles.
+
+### Farmer
+- Register and log in.
+- Create a farm profile.
+- Register multiple ponds.
+- Manage culture cycles.
+- Enter daily farming data.
+- Use AI tools.
+- View predictions and financial reports.
+
+### Expert
+- Review farmer-submitted health scans.
+- Review pond records when authorized.
+- Provide expert comments.
+- Review laboratory reports.
+- Share verified guidance.
+
+### Administrator
+- Manage users.
+- Manage platform content.
+- Manage expert accounts.
+- Manage product information.
+- Monitor platform activity.
+- Manage system configuration.
+
+Implement:
+- Secure registration and login.
+- Password hashing.
+- JWT-based authentication.
+- Protected routes.
+- Role-based permissions.
+- Password reset workflow.
+- Session expiry and refresh handling.
+- Secure authorization for every farmer's private records.
+
+A farmer must never be able to access another farmer's private pond data.
+
+---
+
+# 4. MAIN APPLICATION DASHBOARD
+
+Create a premium, modern dashboard.
+
+Display:
+- Total farms.
+- Total ponds.
+- Active culture cycles.
+- Current culture days.
+- Average pond health score.
+- Latest water quality readings.
+- Daily feed consumption.
+- Estimated biomass.
+- Mortality summary.
+- Growth trends.
+- Predicted harvest dates.
+- Estimated financial performance.
+- Pending alerts.
+- Latest AI scan results.
+
+Include:
+- Interactive charts.
+- Pond comparison.
+- Date filters.
+- Culture-cycle filters.
+- Quick-action buttons.
+- Notifications.
+- Responsive sidebar.
+- Mobile bottom navigation.
+
+Dashboard information must be calculated from actual stored records, not static hardcoded values.
+
+---
+
+# 5. FARM AND POND MANAGEMENT
+
+Allow each farmer to register multiple farms and ponds.
+
+Pond information:
+- Pond name or ID.
+- Pond area.
+- Pond depth.
+- Water capacity.
+- Pond type.
+- Location at an appropriate privacy level.
+- Aerator details.
+- Culture status.
+
+Culture-cycle information:
+- Stocking date.
+- Species.
+- Seed supplier details if the farmer chooses to record them.
+- Seed quantity.
+- Stocking density.
+- Initial average body weight.
+- Initial count.
+- Culture-cycle status.
+- Harvest date.
+
+Automatically calculate:
+- Culture days.
+- Days since stocking.
+- Estimated current farming stage.
+
+Allow farmers to maintain a complete history for every culture cycle.
+
+---
+
+# 6. WATER QUALITY MONITORING
+
+Create a detailed water-quality monitoring module.
+
+Track:
+- pH.
+- Dissolved oxygen (DO).
+- Temperature.
+- Salinity.
+- Alkalinity.
+- Ammonia.
+- Nitrite.
+- Water transparency.
+- Hardness.
+- Other configurable parameters.
+
+Features:
+- Daily data entry.
+- Manual and future sensor-based readings.
+- Interactive historical charts.
+- Safe, caution and warning indicators.
+- Parameter trend analysis.
+- Pond-wise comparisons.
+- Abnormal-change detection.
+- Alerts based on configurable, expert-reviewed thresholds.
+
+Do not use one universal threshold for every pond or culture stage. Allow configurable guidance and show the reference and timestamp for each recommendation.
+
+---
+
+# 7. INTELLIGENT FEED MANAGEMENT
+
+Create an advanced feeding management system.
+
+Track:
+- Daily feed quantity.
+- Feeding time.
+- Feed brand.
+- Pellet size.
+- Protein percentage.
+- Feed type.
+- Feed-tray observations.
+- Remaining feed observations.
+- Estimated biomass.
+
+Calculate:
+- Daily feed per biomass.
+- Cumulative feed consumption.
+- Feed conversion ratio (FCR).
+- Feeding trends.
+- Feed expenditure.
+
+AI-assisted feeding recommendations should consider:
+- Recent shrimp sampling.
+- Estimated biomass.
+- Shrimp growth stage.
+- Previous feed consumption.
+- Feed-tray observations.
+- Water-quality readings.
+- Mortality trends.
+
+Never recommend feeding based only on culture age.
+
+Show the data and assumptions used to produce each recommendation.
+
+---
+
+# 8. SHRIMP GROWTH AND BIOMASS ANALYTICS
+
+Track:
+- Average body weight (ABW).
+- Shrimp count per kg.
+- Sample weight.
+- Sample size.
+- Growth rate.
+- Estimated survival.
+- Estimated biomass.
+
+Provide:
+- Growth charts.
+- Week-to-week comparisons.
+- Pond comparisons.
+- Growth-rate calculations.
+- Estimated biomass trends.
+- Historical sampling records.
+
+Make it possible to enter a new sample and compare it with previous samples.
+
+Clearly distinguish measured values from model-generated estimates.
+
+---
+
+# 9. MORTALITY AND SURVIVAL MONITORING
+
+Create a dedicated mortality module.
+
+Features:
+- Daily mortality entry.
+- Mortality trend charts.
+- Cumulative mortality.
+- Estimated survival percentage.
+- Abnormal mortality alerts.
+- Relationship analysis with water quality and feeding changes.
+
+Detect unusual patterns and recommend additional observation or expert consultation.
+
+---
+
+# 10. GEMINI AI SHRIMP HEALTH SCANNER
+
+This is one of the most important modules.
+
+Build a multimodal AI-based shrimp health screening system using the Gemini API through the backend.
+
+Allow farmers to upload:
+1. Whole shrimp photographs.
+2. Gill close-up photographs.
+3. Head and hepatopancreas photographs.
+4. Muscle photographs.
+5. Gut and faeces photographs.
+6. Multiple-shrimp photographs.
+
+The AI should examine visible abnormalities such as:
+- Colour changes.
+- Gill discolouration.
+- Visible lesions.
+- Muscle opacity.
+- Abnormal body appearance.
+- Empty or abnormal gut appearance.
+- Visible fouling.
+- Shell abnormalities.
+- Other observable physical changes.
+
+Possible disease and condition knowledge categories include:
+- White Spot Syndrome Virus (WSSV).
+- Enterocytozoon hepatopenaei (EHP).
+- Acute hepatopancreatic necrosis disease (AHPND/EMS).
+- Infectious hypodermal and haematopoietic necrosis virus (IHHNV).
+- Infectious myonecrosis virus (IMNV).
+- Taura syndrome virus (TSV).
+- Yellow head virus (YHV).
+- White faeces syndrome.
+- White muscle conditions.
+- Black gill conditions.
+- Soft shell problems.
+- Red body conditions.
+- Other recognised shrimp health conditions.
+
+IMPORTANT MEDICAL AND SCIENTIFIC SAFETY REQUIREMENTS:
+
+A photograph alone cannot reliably confirm most shrimp pathogens.
+
+The scanner must:
+- Identify visible observations.
+- Provide possible explanations and risk indicators.
+- Explain uncertainty.
+- Never present an unconfirmed pathogen as a confirmed diagnosis.
+- Recommend appropriate laboratory testing where necessary.
+- Recommend expert consultation for serious signs.
+- Avoid prescribing antibiotics, chemicals or medicines automatically.
+- Include an unable-to-identify option.
+- Request a clearer photograph when image quality is poor.
+
+Each scan should save:
+- Farmer ID.
+- Pond ID.
+- Culture-cycle ID.
+- Image.
+- Scan date.
+- Visible findings.
+- Possible conditions.
+- Confidence or uncertainty information.
+- Suggested next observations.
+- Expert review status.
+- Laboratory confirmation status.
+
+Build an expert annotation system so verified labels can eventually support a custom AI training dataset.
+
+---
+
+# 11. AI AQUACULTURE ASSISTANT
+
+Create a conversational AI assistant powered by Gemini.
+
+Languages:
+- Telugu.
+- English.
+
+Features:
+- Text-based questions.
+- Voice input where supported.
+- Spoken responses where supported.
+- Context-aware pond questions.
+- Farming guidance.
+- Water-quality explanations.
+- Feeding explanations.
+- Growth and harvest questions.
+- Historical data summaries.
+
+Example farmer questions:
+
+"ఈరోజు నా చెరువులో ఎంత ఫీడ్ వేయాలి?"
+
+"My shrimp growth is slower than last week. Why?"
+
+"My pond DO decreased. What should I check?"
+
+"Compare my two ponds."
+
+"When could my shrimp reach 60 count?"
+
+The AI assistant should use the farmer's authorized recorded data when answering.
+
+It should distinguish:
+- Actual readings.
+- Calculated values.
+- Predictions.
+- General farming guidance.
+
+Do not invent missing pond data or give dangerous treatment instructions.
+
+---
+
+# 12. INTELLIGENT ALERT SYSTEM
+
+Build an alert engine.
+
+Possible alert categories:
+- Low dissolved oxygen.
+- Sudden pH change.
+- Temperature abnormalities.
+- Unusual mortality.
+- Reduced feed consumption.
+- Unexpected growth slowdown.
+- Water-quality combinations associated with increased risk.
+- Missing daily records.
+- Important sampling reminders.
+
+Provide:
+- Alert severity.
+- Alert date and time.
+- Affected pond.
+- Reason for alert.
+- Relevant recorded data.
+- Recommended next checks.
+- Alert history.
+- Acknowledgement status.
+
+Support configurable thresholds and expert-reviewed rules.
+
+Do not generate false emergency alerts from incomplete or unreliable data.
+
+---
+
+# 13. WEATHER AND ENVIRONMENTAL INTELLIGENCE
+
+Integrate an authorized weather API.
+
+Display:
+- Temperature.
+- Rainfall.
+- Humidity.
+- Wind.
+- Forecast.
+- Severe weather warnings.
+
+Features:
+- Pond-wise weather view.
+- Rainfall history.
+- Weather-related observation reminders.
+- Weather and water-quality trend comparison.
+
+Make it clear that weather information is not a direct measurement of pond water conditions.
+
+---
+
+# 14. ADVANCED HARVEST PREDICTION ENGINE
+
+Build a data-driven harvest prediction module.
+
+Use:
+- Stocking information.
+- Latest shrimp samples.
+- Historical ABW.
+- Growth rates.
+- Survival estimates.
+- Feed records.
+- Mortality.
+- Culture duration.
+- Market prices.
+
+Predict:
+- Future ABW.
+- Future count.
+- Estimated harvest date.
+- Estimated biomass.
+- Prediction uncertainty.
+
+Provide comparison scenarios:
+- Harvest at 80 count.
+- Harvest at 60 count.
+- Harvest at 50 count.
+- Harvest at 40 count.
+- Custom target count.
+
+Allow the farmer to compare possible outcomes.
+
+Never guarantee an exact harvest date or profit.
+
+Show assumptions and prediction ranges.
+
+---
+
+# 15. COUNT-WISE MARKET PRICE TRACKER
+
+Keep this module extremely simple.
+
+Farmers should be able to enter:
+- Date.
+- Shrimp count (pieces per kg).
+- Price per kg.
+
+Do not ask for buyer name, company name, buyer phone number, source name or other unnecessary fields.
+
+Features:
+- Add multiple count-price rows.
+- Edit and delete records.
+- Today's price view.
+- Seven-day history.
+- Thirty-day history.
+- Count-wise comparison.
+- Interactive price charts.
+- Price trends.
+- Harvest revenue calculations.
+
+The farmer must be able to manually enter prices.
+
+Future external market-price integration should only be implemented using an authorized and reliable data source.
+
+Clearly show when a price was last updated. Never invent live market prices.
+
+---
+
+# 16. FINANCIAL MANAGEMENT AND PROFIT ANALYTICS
+
+Create a complete farm financial module.
+
+Track:
+- Seed cost.
+- Feed cost.
+- Electricity cost.
+- Labour cost.
+- Probiotic and input costs.
+- Water-management costs.
+- Testing costs.
+- Other expenses.
+- Harvest revenue.
+
+Calculate:
+- Total expenditure.
+- Cost per kg.
+- Expected revenue.
+- Actual revenue.
+- Gross profit.
+- Net profit.
+- Break-even price.
+- Break-even harvest count where the required data is available.
+
+Allow farmers to compare culture cycles and ponds.
+
+---
+
+# 17. WHAT-IF FARMING SIMULATOR
+
+Build an interactive farming decision simulator.
+
+Let farmers change assumptions such as:
+- Harvest count.
+- Expected selling price.
+- Survival rate.
+- Feed price.
+- Remaining culture days.
+- Expected growth.
+- Biomass.
+
+Compare possible scenarios.
+
+Example:
+
+Scenario A: Harvest at 60 count.
+
+Scenario B: Continue growing towards 40 count.
+
+Show:
+- Estimated biomass.
+- Estimated feed requirement.
+- Additional expenses.
+- Expected revenue.
+- Possible profit.
+- Uncertainty.
+
+Clearly label the simulation as an estimate, not a guaranteed result.
+
+---
+
+# 18. POND DIGITAL TWIN
+
+Create a digital profile of every pond.
+
+Each pond should have a chronological history showing:
+- Pond preparation.
+- Stocking.
+- Water readings.
+- Feeding.
+- Growth samples.
+- Mortality.
+- Health scans.
+- Expenses.
+- Harvest.
+- Final financial results.
+
+Create a timeline and visual pond-status dashboard.
+
+Use actual recorded data and clearly identify missing information.
+
+---
+
+# 19. KNOWLEDGE CENTRE
+
+Create a searchable aquaculture knowledge centre.
+
+Categories:
+- Water quality.
+- Feed management.
+- Shrimp growth.
+- Disease awareness.
+- Pond preparation.
+- Biosecurity.
+- Harvest planning.
+- Farm economics.
+- Equipment and technology.
+
+Support Telugu and English content.
+
+Use verified, expert-reviewed references.
+
+For commercial feed, probiotics and aquaculture products, show factual product information and avoid unsupported health or performance claims.
+
+---
+
+# 20. FARMER COMMUNITY AND EXPERT SUPPORT
+
+Create:
+- Farmer discussion groups.
+- Question-and-answer section.
+- Photo sharing.
+- Expert response system.
+- Moderation.
+- Report and abuse controls.
+- Optional anonymous sharing of farming experiences.
+
+Protect farmer privacy.
+
+Do not expose individual pond information without permission.
+
+---
+
+# 21. UNIQUE ADVANCED FEATURES
+
+Add these capabilities as the platform evolves.
+
+### A. Pond Health Intelligence Score
+Create a score out of 100 based on available water, growth, feed, mortality and other relevant records.
+
+Show:
+- Overall score.
+- Contributing parameters.
+- Changes over time.
+- Missing data warnings.
+
+Never let the score replace expert assessment.
+
+### B. Early Warning Pattern Detection
+Identify unusual combinations of:
+- Water-quality changes.
+- Reduced feeding.
+- Mortality increases.
+- Growth slowdown.
+
+Explain which observations triggered the warning.
+
+### C. AI Daily Farm Report
+Generate daily, weekly and monthly summaries.
+
+Include:
+- Important readings.
+- Feed consumption.
+- Growth changes.
+- Mortality.
+- Alerts.
+- Financial updates.
+- Suggested checks.
+
+### D. Smart Sampling Reminder
+Suggest when farmers should enter new shrimp sampling information based on their selected schedule and available data.
+
+### E. Pond Comparison Intelligence
+Compare multiple ponds based on:
+- Growth.
+- Survival.
+- Feed consumption.
+- FCR.
+- Water quality.
+- Expenditure.
+- Harvest results.
+
+### F. Farm Performance Benchmarking
+Allow farmers to compare their own culture cycles and, when enough consented anonymized data exists, relevant regional benchmarks.
+
+### G. IoT Sensor Integration
+Prepare the architecture for future sensors measuring:
+- Dissolved oxygen.
+- Temperature.
+- pH.
+- Salinity.
+
+Support future MQTT-based data ingestion.
+
+Do not require sensors for the initial working product.
+
+### H. Camera and Image History
+Save shrimp photographs over time and allow visual comparison across sampling dates.
+
+### I. Voice-Based Farm Entry
+Allow farmers to dictate daily readings in Telugu or English, with confirmation before saving.
+
+### J. Smart Farm Checklist
+Create configurable checklists for:
+- Pond preparation.
+- Stocking.
+- Daily monitoring.
+- Sampling.
+- Biosecurity.
+- Harvest preparation.
+
+### K. QR-Based Pond Identification
+Generate a unique QR code for each pond so authorized farm workers can quickly open the correct pond record.
+
+### L. Offline-First Operation
+Allow selected daily records to be entered offline and synchronized later.
+
+Resolve conflicting edits safely and show synchronization status.
+
+### M. Farm Worker Access
+Allow farmers to invite authorized workers with restricted permissions, such as daily record entry without access to financial records.
+
+---
+
+# 22. DATABASE DESIGN
+
+Design a normalized MySQL database.
+
+Core entities should include:
+
+- users
+- farmer_profiles
+- expert_profiles
+- farms
+- ponds
+- culture_cycles
+- stocking_records
+- water_quality_records
+- feed_records
+- shrimp_sampling_records
+- mortality_records
+- water_exchange_records
+- aerator_records
+- health_scans
+- scan_images
+- scan_results
+- lab_reports
+- expert_reviews
+- market_prices
+- expenses
+- harvest_records
+- alerts
+- notifications
+- products
+- knowledge_articles
+- community_posts
+- community_comments
+- daily_reports
+- audit_logs
+- device_registry
+- sensor_readings
+- worker_permissions
+
+Use proper relationships, foreign keys, timestamps, indexes and data validation.
+
+Every private record must be associated with the appropriate farmer, farm, pond and culture cycle.
+
+Market price fields must remain minimal: ID, date, count and price per kg.
+
+Provide SQL migrations or Alembic migrations.
+
+---
+
+# 23. UI/UX DESIGN REQUIREMENTS
+
+Design a premium, modern aquaculture SaaS application.
+
+Visual direction:
+- Professional and trustworthy.
+- Clean layouts.
+- Nature-inspired green and aquatic blue accents.
+- Light and dark themes.
+- Modern cards.
+- Clean charts.
+- Clear status indicators.
+- Smooth but restrained animations.
+- Excellent typography.
+- Accessible contrast.
+
+The application must be mobile-first.
+
+Farmers may use the platform on smartphones with slower internet connections.
+
+Design:
+- Responsive sidebar for desktop.
+- Bottom navigation for mobile.
+- Large touch-friendly buttons.
+- Simple data-entry forms.
+- Camera upload.
+- Telugu language support.
+- Clear empty states.
+- Loading states.
+- Error states.
+- Confirmation messages.
+- Helpful tooltips.
+
+Avoid unnecessary visual clutter.
+
+---
+
+# 24. SECURITY, PRIVACY AND RELIABILITY
+
+Implement:
+- Password hashing.
+- Secure authentication.
+- Authorization on backend endpoints.
+- Farmer-level data isolation.
+- Input validation.
+- SQL injection protection.
+- Rate limiting for sensitive endpoints.
+- Secure file upload validation.
+- Image size restrictions.
+- Private image storage.
+- API key protection.
+- Audit logs.
+- Database backups.
+- Error handling.
+- Data export.
+- Account deletion workflow.
+
+Never expose private farmer information in public analytics.
+
+Obtain permission before using farmer photos or laboratory results to train machine-learning models.
+
+---
+
+# 25. DEVELOPMENT PHASES
+
+Do not attempt to build all features in one uncontrolled generation.
+
+Develop in these stages.
+
+PHASE 1: FOUNDATION
+- Project setup.
+- Frontend.
+- Backend.
+- MySQL connection.
+- Authentication.
+- Farmer dashboard.
+- Responsive design.
+
+PHASE 2: FARM MANAGEMENT
+- Farms.
+- Ponds.
+- Culture cycles.
+- Stocking records.
+
+PHASE 3: FARMING DATA
+- Water quality.
+- Feeding.
+- Growth.
+- Mortality.
+- Sampling.
+
+PHASE 4: ANALYTICS
+- Biomass.
+- FCR.
+- Survival.
+- Pond health score.
+- Charts and alerts.
+
+PHASE 5: BUSINESS INTELLIGENCE
+- Market prices.
+- Expenses.
+- Harvest revenue.
+- Profit and loss.
+- What-if simulator.
+
+PHASE 6: GEMINI AI
+- AI assistant.
+- Image screening.
+- Context-aware pond explanations.
+- Daily reports.
+
+PHASE 7: PREDICTIONS
+- Growth prediction.
+- Harvest prediction.
+- Risk pattern detection.
+- Pond digital twin.
+
+PHASE 8: ADVANCED ECOSYSTEM
+- Weather.
+- Voice entry.
+- IoT.
+- Community.
+- Expert review.
+- Regional intelligence.
+
+PHASE 9: FINALIZATION
+- Security testing.
+- Performance optimization.
+- Mobile testing.
+- PWA.
+- Deployment.
+- Backups.
+- Farmer pilot testing.
+
+---
+
+# 26. HOW I WANT YOU TO WORK
+
+I am a beginner-level CSE student.
+
+Act as my senior full-stack architect, software developer, database engineer and AI development mentor.
+
+Follow these rules:
+
+1. First analyze the complete project requirements.
+2. Propose a scalable architecture.
+3. Create a complete folder structure.
+4. Explain the role of every important folder.
+5. Develop one phase at a time.
+6. Provide complete code for each file.
+7. Tell me the exact file path where the code belongs.
+8. Give exact terminal commands.
+9. Explain how to configure the database.
+10. Explain environment variables.
+11. Never skip required configuration.
+12. Never provide incomplete code with unexplained placeholders.
+13. Do not assume that an API, database or external service is already configured.
+14. Include error handling and input validation.
+15. Test every module before moving to the next.
+16. Explain how to run the frontend and backend.
+17. Provide sample test data only when clearly labelled as sample data.
+18. Never present fake data as actual farm readings or live market prices.
+19. Do not generate all 20 modules as a non-functional UI.
+20. Maintain a progress checklist throughout development.
+
+If a feature requires an external API key, ask me to configure it securely and provide a fallback mode where practical.
+
+For every major phase, provide:
+- Objective.
+- Files to create.
+- Complete code.
+- Installation commands.
+- Database changes.
+- How to run.
+- How to test.
+- Expected result.
+- Common errors and solutions.
+
+---
+
+# 27. FIRST TASK – START DEVELOPMENT
+
+Do not immediately generate the entire application.
+
+Start by providing:
+
+1. A professional system architecture.
+2. Recommended final technology stack.
+3. Complete initial project folder structure.
+4. Database architecture.
+5. API architecture.
+6. Initial installation requirements.
+7. Phase 1 implementation plan.
+
+Then begin Phase 1.
+
+Create the working project foundation with:
+- React + TypeScript frontend.
+- Python FastAPI backend.
+- MySQL database connection.
+- Environment configuration.
+- Basic registration and login.
+- Protected farmer dashboard.
+- AquaCare AI branding.
+- Responsive desktop and mobile layout.
+
+The first milestone must be a genuinely working full-stack application.
+
+Build a product that can eventually be used by real vannamei shrimp farmers, not merely a college demonstration.
+
+Remember: functionality, scientific reliability, security, usability and scalability are more important than adding impressive-looking features without working logic.
+
+PROJECT NAME: AQUACARE AI
+
+BEGIN WITH THE ARCHITECTURE AND PHASE 1.
