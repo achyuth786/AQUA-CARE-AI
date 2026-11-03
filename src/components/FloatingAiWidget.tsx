@@ -47,14 +47,16 @@ export const FloatingAiWidget: React.FC<FloatingAiWidgetProps> = ({
       const data = await res.json();
       setMessages((prev) => [...prev, { sender: 'ai', text: data.reply }]);
     } catch {
+      const offlineReply =
+        language === 'te'
+          ? 'సర్వర్ కనెక్ట్ కాకపోవడంతో, ఆఫ్‌లైన్ ప్రాక్టికల్ మార్గదర్శకం ఇస్తున్నాను:\n\n• దాణాను 20–30% తగ్గించండి మరియు ట్రే క్లియారెన్స్ 2.5 గంటల తర్వాత ప్రతి రోజు చూడండి.\n• DO 4.5 ppm కంటే తక్కువైతే వెంటనే ఏరియేటర్లు నడపండి.\n• గట్ ప్రోబయోటిక్, ఆర్గానిక్ యాసిడ్ మరియు బ్లీచింగ్/లైమ్ నిర్వహణను క్రమం తప్పకుండా చేయండి.\n• సీడ్ కొనుగోలు చేసే ముందు PCR మరియు హేచరీ పరీక్షలతోనే ఎంచుకోండి.'
+          : 'The AI service is temporarily offline, so here is a practical guidance:\n\n• Reduce feed by 20–30% and inspect tray clearance daily after 2.5 hours.\n• If DO falls below 4.5 ppm, run all aerators immediately.\n• Use gut probiotic and proper pond hygiene, liming, and bleaching control consistently.\n• Always buy PL from hatcheries with verified PCR and pathogen testing.';
+
       setMessages((prev) => [
         ...prev,
         {
           sender: 'ai',
-          text:
-            language === 'te'
-              ? 'క్షమించండి, సర్వర్ కనెక్ట్ అవ్వలేదు. దయచేసి మళ్ళీ ప్రయత్నించండి.'
-              : 'Could not connect to AI advisor. Please retry.',
+          text: offlineReply,
         },
       ]);
     } finally {

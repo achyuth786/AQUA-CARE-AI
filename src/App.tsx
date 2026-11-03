@@ -360,7 +360,7 @@ function AppContent() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-emerald-500/20 selection:text-emerald-700">
+    <div className="app-shell min-h-screen text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-emerald-500/20 selection:text-emerald-700">
       {/* Top Navigation Bar with Green Accent */}
       <Navbar
         darkMode={darkMode}
@@ -386,7 +386,9 @@ function AppContent() {
 
         {/* Primary Content Viewport */}
         <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 max-w-7xl mx-auto w-full">
-          {currentView === 'dashboard' && (
+          <div className="rounded-[28px] border border-white/60 dark:border-slate-800/80 bg-white/75 dark:bg-slate-900/70 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.35)] backdrop-blur-sm p-2 md:p-3">
+            <div className="rounded-[22px] bg-slate-50/80 dark:bg-slate-950/40">
+              {currentView === 'dashboard' && (
             <OverviewDashboard
               ponds={ponds}
               selectedPondId={selectedPondId}
@@ -474,6 +476,8 @@ function AppContent() {
           {currentView === 'weather' && (
             <WeatherRiskView ponds={ponds} selectedPondId={selectedPondId} />
           )}
+            </div>
+          </div>
         </main>
       </div>
 

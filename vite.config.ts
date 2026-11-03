@@ -6,9 +6,9 @@ import {defineConfig} from 'vite';
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
-    // Vercel serves files from public/ itself. Keep existing source assets when
-    // its build writes the Vite output there.
-    publicDir: false as const,
+    // Keep the static disease-reference images and other public assets available
+    // for the scanner and landing page in both dev and production.
+    publicDir: 'public',
     build: {
       emptyOutDir: process.env.VERCEL ? false : undefined,
     },

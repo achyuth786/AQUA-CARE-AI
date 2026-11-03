@@ -21,9 +21,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+const publicImagesDir = path.join(__dirname, 'public', 'images');
 
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+app.use('/images', express.static(publicImagesDir));
 
 // In-Memory Database store
 let farm = { ...initialFarm };
@@ -57,8 +59,9 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/weather-risk', async (req, res) => {
-  const latitude = Number(req.query.lat);
-  const longitude = Number(req.query.lon);
+  const fallbackLocation = { latitude: 13.0827, longitude: 80.2707 };
+  const latitude = Number(req.query.lat ?? fallbackLocation.latitude);
+  const longitude = Number(req.query.lon ?? fallbackLocation.longitude);
   const pond = ponds.find((item) => item.id === req.query.pond_id) || ponds[0];
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {

@@ -162,6 +162,39 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         </div>
       </div>
 
+      <div className="rounded-3xl border border-slate-200/80 bg-white/65 dark:border-slate-800 dark:bg-slate-900/55 p-4 shadow-[0_20px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">Health snapshot</p>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white">Shrimp condition references</h3>
+          </div>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300">
+            Real farm visuals
+          </span>
+        </div>
+
+        <div className="shrimp-photo-strip">
+          {[
+            { src: '/images/vannamei_fresh_shrimp_1793641197038.jpg', label: 'Healthy stock', tag: 'Baseline' },
+            { src: '/images/shrimp_wssv_macro_1793643802278.jpg', label: 'White spot signs', tag: 'Critical' },
+            { src: '/images/shrimp_black_gill_1793643832127.jpg', label: 'Gill health', tag: 'Monitor' },
+          ].map((photo) => (
+            <div key={photo.src} className="shrimp-photo-card">
+              <img src={photo.src} alt={photo.label} />
+              <div className="shrimp-photo-label">
+                <div>
+                  <div className="text-[11px] font-bold leading-none">{photo.label}</div>
+                  <div className="mt-1 text-[9px] uppercase tracking-[0.14em] text-emerald-100/80">{photo.tag}</div>
+                </div>
+                <span className="rounded-full border border-white/30 bg-slate-950/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]">
+                  Farm
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Critical Alert Banner (if active) */}
       {activeAlerts.length > 0 && (
         <div className="relative overflow-hidden rounded-xl border border-rose-300 dark:border-rose-900/80 bg-rose-50/90 dark:bg-rose-950/40 p-4 shadow-sm transition-all">

@@ -95,15 +95,17 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
       console.error(err);
+      const offlineReply =
+        language === 'te'
+          ? 'సర్వర్ కనెక్ట్ అయకపోవడంతో, ఆఫ్‌లైన్ పద్ధతిలో మీకు సమాధానం ఇస్తున్నాను. వనామి చెరువుల్లో వైట్ గట్, ఈహెచ్‌పీ మరియు వైట్ స్పాట్‌ను నివారించడానికి:\n\n1) దాణాను 20–30% తగ్గించి, ట్రే క్లియారెన్స్ 2.5 గంటల తర్వాత ప్రతి రోజు చూసుకోండి.\n2) DO 4.5 ppm కంటే తక్కువైతే వెంటనే అన్ని ఏరియేటర్లు నడపండి మరియు గడ్డి/స్లడ్జ్‌ను తొలగించండి.\n3) బాక్టీరియా/జీన్ సమస్యలకు గట్ ప్రోబయోటిక్, ఆర్గానిక్ యాసిడ్ మరియు మంచి బయోసెక్యూరిటీని అందించండి.\n4) బ్లీచింగ్, లైమ్, మెగ్నీషియం మరియు pH నియంత్రణను నియమితంగా పర్యవేక్షించండి.\n5) సీడ్ కొనుగోలుదారుని PCR/హేచరీ పరీక్షలతో మాత్రమే ఎంచుకోండి.'
+          : 'The AI service is temporarily offline, so here is a practical farm-safe answer:\n\n1) Reduce feed by 20–30% and inspect tray clearance every 2.5 hours to catch White Gut and slow-growth issues early.\n2) Keep DO above 4.5 ppm with all aerators running when early-morning oxygen drops.\n3) Add gut probiotic or organic-acid support, and keep sludge and runoff under control.\n4) Monitor pH, alkalinity, salinity, and magnesium regularly to reduce shell and molt stress.\n5) Buy PL only from hatcheries with verified PCR and pathogen-negative certificates to reduce White Spot and EHP risk.';
+
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-err-${Date.now()}`,
+          id: `ai-offline-${Date.now()}`,
           sender: 'assistant',
-          text:
-            language === 'te'
-              ? 'క్షమించండి, సర్వర్ స్పందించడంలో లోపం జరిగింది. దయచేసి మళ్ళీ ప్రయత్నించండి.'
-              : 'Error contacting AI assistant. Please check your connection and retry.',
+          text: offlineReply,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -131,7 +133,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
               {t('assistant_title')}
             </h2>
             <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
-              Gemini 3.8 Flash
+              Local farm advisor
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">
