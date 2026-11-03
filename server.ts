@@ -329,6 +329,28 @@ app.post('/api/feed-records', (req, res) => {
     feed_adjustment_notes,
   } = req.body;
 
+  const normalizedTray = tray_observations || {
+    tray_1: 'clean',
+    tray_2: 'clean',
+    tray_3: 'clean',
+    tray_4: 'clean',
+  };
+
+  const trayStateScore = Object.values(normalizedTray).reduce((score, value) => {
+    if (value === 'untouched') return score + 3;
+    if (value === 'half_left') return score + 2;
+    if (value === 'slight_left') return score + 1;
+    return score;
+  }, 0);
+
+  const generatedNote =
+    feed_adjustment_notes ||
+    (trayStateScore >= 5
+      ? 'Poor feed response detected; reduce next ration and investigate DO, ammonia, and gill health.'
+      : trayStateScore >= 2
+      ? 'Moderate tray leftovers observed; keep ration stable and monitor appetite for the next 24 hours.'
+      : 'Good feed response; maintain current ration and monitor tray clearance.');
+
   const newRecord = {
     id: `feed-${Date.now()}`,
     pond_id: pond_id || 'pond-01',
@@ -339,13 +361,8 @@ app.post('/api/feed-records', (req, res) => {
     pellet_size_mm: Number(pellet_size_mm || 1.6),
     protein_pct: Number(protein_pct || 38),
     feed_quantity_kg: Number(feed_quantity_kg || 10),
-    tray_observations: tray_observations || {
-      tray_1: 'clean',
-      tray_2: 'clean',
-      tray_3: 'clean',
-      tray_4: 'clean',
-    },
-    feed_adjustment_notes: feed_adjustment_notes || '',
+    tray_observations: normalizedTray,
+    feed_adjustment_notes: generatedNote,
   };
 
   feedRecords.unshift(newRecord);

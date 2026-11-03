@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n/LanguageContext.tsx';
 import { Pond } from '../types/aquaculture.ts';
 import { X, Droplets, UtensilsCrossed, TrendingUp, Check } from 'lucide-react';
@@ -25,6 +25,11 @@ export const FastLogModal: React.FC<FastLogModalProps> = ({
   const { language, t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'water' | 'feed' | 'sampling'>('water');
   const [pondId, setPondId] = useState(selectedPondId === 'all' ? ponds[0]?.id || 'pond-01' : selectedPondId);
+
+  useEffect(() => {
+    setPondId(selectedPondId === 'all' ? ponds[0]?.id || 'pond-01' : selectedPondId);
+  }, [selectedPondId, ponds]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successNotice, setSuccessNotice] = useState(false);
 
@@ -43,6 +48,7 @@ export const FastLogModal: React.FC<FastLogModalProps> = ({
   const [mealNumber, setMealNumber] = useState<1 | 2 | 3 | 4>(1);
   const [feedQuantity, setFeedQuantity] = useState('10.0');
   const [feedBrand, setFeedBrand] = useState('CP Prima 38%');
+  const [feedNotes, setFeedNotes] = useState('');
   const [tray1, setTray1] = useState<'clean' | 'slight_left' | 'half_left' | 'untouched'>('clean');
   const [tray2, setTray2] = useState<'clean' | 'slight_left' | 'half_left' | 'untouched'>('clean');
   const [tray3, setTray3] = useState<'clean' | 'slight_left' | 'half_left' | 'untouched'>('clean');
@@ -86,6 +92,7 @@ export const FastLogModal: React.FC<FastLogModalProps> = ({
             tray_3: tray3,
             tray_4: tray4,
           },
+          feed_adjustment_notes: feedNotes || undefined,
         });
       } else if (activeTab === 'sampling') {
         const selectedPondObj = ponds.find((p) => p.id === pondId);
@@ -362,6 +369,19 @@ export const FastLogModal: React.FC<FastLogModalProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Feeding note / దాణా వ్యాఖ్య
+                </label>
+                <textarea
+                  rows={3}
+                  value={feedNotes}
+                  onChange={(e) => setFeedNotes(e.target.value)}
+                  placeholder="e.g. Feed response weak after rain, tray left overs remained, check oxygen and final intake tomorrow."
+                  className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white resize-none"
+                />
               </div>
             </div>
           )}

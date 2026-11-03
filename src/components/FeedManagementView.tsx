@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '../i18n/LanguageContext.tsx';
 import { Pond, FeedRecord } from '../types/aquaculture.ts';
 import {
@@ -30,6 +30,11 @@ export const FeedManagementView: React.FC<FeedManagementViewProps> = ({
   const [pondId, setPondId] = useState(
     selectedPondId === 'all' ? ponds[0]?.id || 'pond-01' : selectedPondId
   );
+
+  useEffect(() => {
+    setPondId(selectedPondId === 'all' ? ponds[0]?.id || 'pond-01' : selectedPondId);
+  }, [selectedPondId, ponds]);
+
   const activePond = ponds.find((p) => p.id === pondId) || ponds[0];
 
   // Feed % of Biomass Sliding Scale (based on ABW)
@@ -48,6 +53,64 @@ export const FeedManagementView: React.FC<FeedManagementViewProps> = ({
   );
 
   const filteredFeed = feedRecords.filter((f) => f.pond_id === pondId);
+  const recentFeed = [...filteredFeed].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+
+  const appetiteScore = recentFeed.reduce((score, record) => {
+    const trayValues = Object.values(record.tray_observations || {}) as string[];
+    const trayPenalty = trayValues.reduce((sum, value) => {
+      if (value === 'untouched') return sum + 3;
+      if (value === 'half_left') return sum + 2;
+      if (value === 'slight_left') return sum + 1;
+      return sum;
+    }, 0);
+    return score + trayPenalty;
+  }, 0);
+
+  const underfeedingDays = recentFeed.filter((record) => {
+    const trayValues = Object.values(record.tray_observations || {}) as string[];
+    return trayValues.some((value) => value === 'half_left' || value === 'untouched');
+  }).length;
+
+  const feedReport =
+    underfeedingDays >= 6
+      ? {
+          tone: 'rose',
+          title: 'Feed intake is poor for the last 7-10 days',
+          description:
+            'Shrimp appetite is trending down; check dissolved oxygen, ammonia, and gut health before increasing feed. If this continues, prepare a management review or consider final harvest timing.',
+          actions: [
+            'Add gut-probiotic feed top-dressing and organic-acid support for 5-7 days.',
+            'Reduce ration by 20-30% for the next 2 meals and re-check tray clearance.',
+            'If poor intake continues beyond 10 days with low growth, plan harvest or a final-cycle decision.',
+          ],
+        }
+      : underfeedingDays >= 3
+      ? {
+          tone: 'amber',
+          title: 'Appetite is below target in recent meals',
+          description:
+            'This is a warning sign of stress or water-quality drift. Adjust feeding carefully and monitor every meal for the next 3 days.',
+          actions: [
+            'Stabilize DO and ammonia before feeding more.',
+            'Keep ration steady and observe tray clearance after 2 hours.',
+            'Use probiotic or mineral support if the pond shows weak growth.',
+          ],
+        }
+      : {
+          tone: 'emerald',
+          title: 'Feed response is stable',
+          description: 'Appetite is acceptable and tray clearance is holding within the normal range.',
+          actions: [
+            'Maintain the current ration and continue daily monitoring.',
+            'Track next 3 days to confirm growth and survival remain on target.',
+          ],
+        };
+
+  const feedToneClasses = {
+    rose: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300',
+    amber: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+  }[feedReport.tone];
 
   return (
     <div className="space-y-6 pb-16 md:pb-6">
@@ -139,6 +202,23 @@ export const FeedManagementView: React.FC<FeedManagementViewProps> = ({
           <div className="text-[11px] font-sans text-slate-500 mt-2">
             Biomass: {activePond.estimated_biomass_kg.toLocaleString()} kg
           </div>
+        </div>
+      </div>
+
+      <div className={`p-5 rounded-2xl border ${feedToneClasses} space-y-3`}>
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <TrendingDown className="w-4 h-4" />
+          <span>Daily Feed Update</span>
+        </div>
+        <div className="text-lg font-bold">{feedReport.title}</div>
+        <p className="text-sm leading-relaxed">{feedReport.description}</p>
+        <ul className="list-disc pl-5 text-sm space-y-1">
+          {feedReport.actions.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <div className="text-[11px] font-medium opacity-80">
+          Recent 10-day appetite score: {appetiteScore} • Poor intake days: {underfeedingDays}
         </div>
       </div>
 
