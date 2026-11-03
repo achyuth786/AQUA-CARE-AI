@@ -52,6 +52,22 @@ export const WeatherRiskView: React.FC<WeatherRiskViewProps> = ({ ponds, selecte
 
   useEffect(() => { loadRisk(); }, [selectedPondId]);
 
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const next = { lat: coords.latitude, lon: coords.longitude, label: 'Current local weather' };
+        setLocation(next);
+        loadRisk(next);
+      },
+      () => {
+        setLocation(DEFAULT_LOCATION);
+        loadRisk(DEFAULT_LOCATION);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, [pond?.id]);
+
   const useFarmLocation = () => {
     if (!navigator.geolocation) {
       setError('Location is not supported by this browser. Using Bhimavaram forecast.');

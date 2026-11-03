@@ -102,12 +102,24 @@ function AppContent() {
   const [editingPond, setEditingPond] = useState<Pond | null>(null);
 
   // Application Data States
-  const [ponds, setPonds] = useState<Pond[]>(initialPonds);
+  const [ponds, setPonds] = useState<Pond[]>(() => {
+    try {
+      const saved = localStorage.getItem('aquacare_ponds');
+      return saved ? JSON.parse(saved) : initialPonds;
+    } catch {
+      return initialPonds;
+    }
+  });
   const [waterRecords, setWaterRecords] = useState<WaterQualityRecord[]>(initialWaterRecords);
   const [feedRecords, setFeedRecords] = useState<FeedRecord[]>(initialFeedRecords);
   const [samplingRecords, setSamplingRecords] = useState<SamplingRecord[]>(initialSamplingRecords);
   const [marketPrices, setMarketPrices] = useState<MarketPriceRecord[]>(initialMarketPrices);
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts);
+
+  // Keep farmer-created ponds available when the hosted API is unavailable.
+  useEffect(() => {
+    localStorage.setItem('aquacare_ponds', JSON.stringify(ponds));
+  }, [ponds]);
 
   // Load backend state
   useEffect(() => {
@@ -148,17 +160,18 @@ function AppContent() {
         body: JSON.stringify(pondData),
       });
 
-      if (res.ok) {
-        const updated = await res.json();
-        if (isEdit) {
-          setPonds((prev) => prev.map((p) => (p.id === pondId ? updated : p)));
-        } else {
-          setPonds((prev) => [...prev, updated]);
-          setSelectedPondId(updated.id);
-        }
+      if (!res.ok) throw new Error(`Pond API returned ${res.status}`);
+
+      const updated = await res.json();
+      if (isEdit) {
+        setPonds((prev) => prev.map((p) => (p.id === pondId ? updated : p)));
+        setSelectedPondId(pondId || updated.id);
+      } else {
+        setPonds((prev) => [...prev, updated]);
+        setSelectedPondId(updated.id);
       }
+      setCurrentView('dashboard');
     } catch {
-      // Local fallback
       if (isEdit && pondId) {
         setPonds((prev) =>
           prev.map((p) =>
@@ -166,37 +179,41 @@ function AppContent() {
               ? {
                   ...p,
                   ...pondData,
+                  name: pondData.name || p.name,
+                  name_te: pondData.name_te || p.name_te || p.name,
                   estimated_biomass_kg: Math.round(
-                    (pondData.seed_quantity * 0.85 * pondData.current_abw_g) / 1000
+                    (Number(pondData.seed_quantity || p.seed_quantity) * 0.85 * Number(pondData.current_abw_g || p.current_abw_g)) / 1000
                   ),
                 }
               : p
           )
         );
+        setSelectedPondId(pondId);
       } else {
+        const seedCount = Number(pondData.seed_quantity || 100000);
+        const abw = Number(pondData.current_abw_g || 16.5);
+        const area = Number(pondData.area_ha || 1.0);
         const newLocalPond: Pond = {
-          id: `pond-${Date.now()}`,
+          id: `local-pond-${Date.now()}`,
           farm_id: 'farm-godavari-01',
-          name: pondData.name,
-          name_te: pondData.name_te || pondData.name,
-          area_ha: pondData.area_ha || 1.0,
-          depth_m: pondData.depth_m || 1.5,
+          name: (pondData.name || 'Pond').trim() || 'Pond',
+          name_te: pondData.name_te || pondData.name || 'చెరువు',
+          area_ha: area,
+          depth_m: Number(pondData.depth_m || 1.5),
           water_source: pondData.water_source || 'Brackish Creek Canal',
-          aerator_count: pondData.aerator_count || 4,
-          aerator_hp: pondData.aerator_hp || 8,
+          aerator_count: Number(pondData.aerator_count || 4),
+          aerator_hp: Number(pondData.aerator_hp || 8),
           status: 'active',
-          doc: pondData.doc || 40,
+          doc: Number(pondData.doc || 40),
           stocking_date: pondData.stocking_date || new Date().toISOString().split('T')[0],
           species: 'Litopenaeus vannamei (SPF)',
-          seed_quantity: pondData.seed_quantity || 100000,
-          stocking_density_per_sqm: Math.round(pondData.seed_quantity / (pondData.area_ha * 10000)),
+          seed_quantity: seedCount,
+          stocking_density_per_sqm: Math.round(seedCount / (Math.max(area, 0.01) * 10000)),
           initial_abw_g: 0.01,
-          current_abw_g: pondData.current_abw_g || 16.5,
-          estimated_count: pondData.estimated_count || 60,
+          current_abw_g: abw,
+          estimated_count: Number(pondData.estimated_count || Math.round(1000 / abw)),
           estimated_survival_pct: 85.0,
-          estimated_biomass_kg: Math.round(
-            (pondData.seed_quantity * 0.85 * pondData.current_abw_g) / 1000
-          ),
+          estimated_biomass_kg: Math.round((seedCount * 0.85 * abw) / 1000),
           cumulative_feed_kg: 1800,
           fcr: 1.28,
           health_score: 92,
@@ -204,6 +221,7 @@ function AppContent() {
         setPonds((prev) => [...prev, newLocalPond]);
         setSelectedPondId(newLocalPond.id);
       }
+      setCurrentView('dashboard');
     }
   };
 

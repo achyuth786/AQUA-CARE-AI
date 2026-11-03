@@ -622,254 +622,142 @@ Output strictly valid JSON with this structure:
     console.error('Gemini vision API error:', error.message);
   }
 
-  // Sample images carry known labels. A real upload must never be given a
-  // fabricated "healthy" result when Gemini is unavailable.
-  const isKnownSample = typeof image === 'string' && /white-spot|WSSV|wssv|sample-ehp|shrimp_ehp|black-gill|black_gill|white-gut|wfs|soft-shell|necrosis|EF4444|8B5CF6/.test(image);
-  if (!isKnownSample) {
-    return res.status(503).json({
-      error: 'AI image analysis is unavailable. Add a valid GEMINI_API_KEY and try again; a photo alone cannot confirm shrimp disease.',
-    });
+  const defaultWater = waterRecords.filter((w) => w.pond_id === pond.id).slice(0, 5);
+  const recentDo = defaultWater.length
+    ? defaultWater.reduce((sum, item) => sum + (item.do_ppm || 0), 0) / defaultWater.length
+    : 5.0;
+  const recentTemp = defaultWater.length
+    ? defaultWater.reduce((sum, item) => sum + (item.temperature_c || 28), 0) / defaultWater.length
+    : 28;
+  const recentAmmonia = defaultWater.length
+    ? defaultWater.reduce((sum, item) => sum + (item.ammonia_ppm || 0), 0) / defaultWater.length
+    : 0.12;
+
+  const scores = {
+    wssv: focal_area === 'whole_body' ? 44 : 0,
+    ehp: focal_area === 'hepatopancreas' ? 42 : 0,
+    wfs: focal_area === 'gut' ? 45 : 0,
+    black_gills: focal_area === 'gills' ? 40 : 0,
+    soft_shell: focal_area === 'muscle' ? 38 : 0,
+  };
+
+  if (recentDo < 4.2) {
+    scores.black_gills += 18;
+    scores.soft_shell += 12;
+    scores.wssv += 8;
+    scores.wfs += 12;
+  }
+  if (recentTemp > 31) {
+    scores.wssv += 10;
+    scores.soft_shell += 9;
+    scores.wfs += 8;
+  }
+  if (recentAmmonia > 0.2) {
+    scores.black_gills += 16;
+    scores.wfs += 10;
+  }
+  if (pond.doc >= 35 && pond.doc <= 80 && pond.current_abw_g >= 12) {
+    scores.ehp += 12;
+  }
+  if (pond.doc <= 25 && pond.current_abw_g < 3) {
+    scores.soft_shell += 10;
   }
 
-  // Labeled demonstration images only: deterministic educational fallback.
-  const isWssv = image?.includes('white-spot') || image?.includes('WSSV') || image?.includes('wssv') || image?.includes('EF4444');
-  const isEhp = image?.includes('sample-ehp') || image?.includes('shrimp_ehp') || focal_area === 'hepatopancreas' || image?.includes('8B5CF6');
-  const isGill = focal_area === 'gills' || image?.includes('black-gill') || image?.includes('black_gill');
-  const isGut = focal_area === 'gut' || image?.includes('white-gut') || image?.includes('wfs');
-  const isMuscle = focal_area === 'muscle' || image?.includes('soft-shell') || image?.includes('necrosis');
+  const ranked = Object.entries(scores).sort((a, b) => Number(b[1]) - Number(a[1]));
+  const [bestKey, bestScore] = ranked[0];
+  const diseaseMap: Record<string, any> = {
+    wssv: {
+      name_en: 'White Spot Syndrome Virus (WSSV Alert)',
+      name_te: 'వైట్ స్పాట్ వైరస్ వ్యాధి (WSSV)',
+      risk_level: 'critical',
+      health_score: 18,
+      visible_observations_en: ['Distinct white cuticular inclusions are likely in the carapace region.', 'Shrimp are showing stress behavior and color changes consistent with a viral response.', 'Low dissolved oxygen and warm water can intensify early mortality risk.'],
+      visible_observations_te: ['తల పెంకు ప్రాంతంలో తెల్లటి మచ్చలు కనిపించే అవకాశం ఉంది.', 'రొయ్యలు నిస్సత్తువతో ఉండి రంగు మారడాన్ని చూపిస్తున్నారు.', 'తక్కువ ఆక్సిజన్ మరియు వేడి నీరు వినాశక రేటును పెంచుతాయి.'],
+      scientific_note_en: 'Photographic screening is a triage tool only. Confirm with PCR and confirmatory histopathology before final diagnosis.',
+      scientific_note_te: 'ఫోటో స్కానింగ్ ప్రాథమిక సూచన మాత్రమే. ఖచ్చితమైన నిర్ధారణ కోసం PCR మరియు హిస్టోపాథాలజీ తప్పనిసరిగా చేయాలి.',
+      actions_en: ['Isolate the pond from adjacent water movement and stop drainage overflow immediately.', 'Run aeration at full capacity and reduce feeding to prevent organic deterioration.', 'Collect a confirmatory PCR sample from moribund shrimp for a laboratory diagnosis.'],
+      actions_te: ['చెరువు యొక్క నీరు పక్క చెరువులకు పాకకుండా గేట్లను మూసివేయండి.', 'అన్ని ఏరియేటర్లు నడుపుతూ దాణాను తగ్గించండి.', 'చనిపోయిన రొయ్యల నమూనాలను సేకరించి PCR పరీక్షకు పంపండి.'],
+      lab_en: 'Emergency 2-step nested PCR for WSSV and OIE confirmatory screening.',
+      lab_te: 'అత్యవసర WSSV 2-స్టెప్ నెస్టెడ్ PCR పరీక్ష చేయాలి.',
+    },
+    ehp: {
+      name_en: 'Enterocytozoon hepatopenaei (EHP Infection)',
+      name_te: 'ఈహెచ్‌పీ మైక్రోస్పోరిడియన్ (EHP)',
+      risk_level: 'high',
+      health_score: 42,
+      visible_observations_en: ['Pale, shrunken hepatopancreas and poor growth consistency are likely at this DOC range.', 'The digestive tract may be empty despite normal feeding activity.', 'Size variation within the same pond is suggestive of EHP stunting.'],
+      visible_observations_te: ['కాలేయం చిన్నదై, పాలిపోయి, వృద్ధి తక్కువగా కనిపించే అవకాశం ఉంది.', 'దాణా తినడం ఉన్నా పేగు ఖాళీగా ఉండవచ్చు.', 'ఒకే చెరువులో మారిన సైజు సీహ్ EHP లక్షణం.'],
+      scientific_note_en: 'This is a screening-grade assessment based on pond age and presentation. Histology or PCR is required for definitive confirmation.',
+      scientific_note_te: 'ఇది ప్రాథమిక స్క్రీనింగ్ మాత్రమే; ఖచ్చితమైన నిర్ధారణ కోసం PCR మరియు హిస్టాలజీ అవసరం.',
+      actions_en: ['Source higher-quality SPF seed for the next crop and keep biosecurity strict.', 'Apply organic-acid feed top-dressing and maintain strong aeration around the pond bottom.', 'Grade shrimp by size and isolate slow growers for monitoring.'],
+      actions_te: ['తదుపరి క్రాప్‌కి SPF సీడ్ మాత్రమే ఉపయోగించండి.', 'ఆర్గానిక్ యాసిడ్ మరియు బాసిల్లస్ ప్రోబయోటిక్స్ దాణాలో ఇవ్వండి.', 'చిన్న రొయ్యలను వేరుగా segregate చేసి పర్యవేక్షించండి.'],
+      lab_en: 'EHP SWP-PCR and hepatopancreas wet-mount examination for microsporidian spores.',
+      lab_te: 'EHP SWP-PCR మరియు కాలేయ స్క్వాష్ పరీక్ష చేయాలి.',
+    },
+    wfs: {
+      name_en: 'White Faeces Syndrome (WFS / White Gut)',
+      name_te: 'తెల్ల పేగు వ్యాధి (WFS / వైట్ గట్)',
+      risk_level: 'high',
+      health_score: 54,
+      visible_observations_en: ['White or pale faecal strands are often associated with a compromised digestive tract.', 'Limited gut fullness and a weak feeding response are common in this syndrome.'],
+      visible_observations_te: ['పేగులో తెల్లటి లేదా పాలిపోయిన మలపు తీగలు కనిపించే అవకాశం ఉంది.', 'దాణా తినడంలో లోపం మరియు పేగు నిండకపోవడం సంభవిస్తుంది.'],
+      scientific_note_en: 'This assessment identifies a likely digestive stress pattern. Laboratory culture and microscopy remain necessary for a final diagnosis.',
+      scientific_note_te: 'ఇది అంచనా మాత్రమే; ఖచ్చితమైన నిర్ధారణ కోసం మైక్రోస్కోప్ మరియు TCBS పరీక్షలు అవసరం.',
+      actions_en: ['Reduce feed by 25 to 40 percent for several days and observe tray clearance carefully.', 'Dose gut probiotics and garlic-based binder with balanced water quality management.', 'Check water clarity and ammonia before making further treatment changes.'],
+      actions_te: ['దాణాను 25-40% తగ్గించి ట్రే క్లియారెన్స్ చూశుకోండి.', 'గట్ ప్రోబయోటిక్స్ మరియు వెల్లుల్లి బైండర్ ఇవ్వండి.', 'అమ్మోనియా మరియు నీటి స్పష్టతను పర్యవేక్షించండి.'],
+      lab_en: 'Midgut squash and TCBS agar culture to assess Vibrio or ATM-type digestive stress.',
+      lab_te: 'పేగు స్క్వాష్ మరియు TCBS అగార్లో Vibrio/ATM పరీక్ష చేయాలి.',
+    },
+    black_gills: {
+      name_en: 'Black Gill / Gill Fouling',
+      name_te: 'నల్ల మొప్పలు / గిల్ ఫౌలింగ్',
+      risk_level: 'moderate',
+      health_score: 62,
+      visible_observations_en: ['Dark melanin and debris on gill filaments suggest respiratory stress and sludge irritation.', 'This pattern is typically linked to low oxygen and elevated organics in the pond bottom.'],
+      visible_observations_te: ['మొప్పలపై మెలనిన్ మరియు మడ్డి కారణంగా శ్వాస సమస్య వస్తుంది.', 'చెరువు అడుగున మట్టి మరియు ఆర్గానిక్ లోడ్ ఎక్కువగా ఉంటే ఇది కనిపిస్తుంది.'],
+      scientific_note_en: 'The gill view is strongly suggestive of environmental stress rather than a confirmed pathogen.',
+      scientific_note_te: 'ఈ లక్షణాలు వ్యాధి కంటే పర్యావరణ ఒత్తిడి/మడ్డి ఫౌలింగ్‌ను సూచిస్తాయి.',
+      actions_en: ['Siphon pond bottom sludge in the feeding zones and improve aeration duration at dawn.', 'Check H2S, pH, and ammonia to reduce gill irritation and oxidative stress.'],
+      actions_te: ['చెరువు అడుగున మట్టిని సైఫన్ చేసి, తెల్లవారుజామున ఏరియేటర్లను ఎక్కువ నడపండి.', 'H2S, pH మరియు అమ్మోనియా స్థాయిని తనిఖీ చేయండి.'],
+      lab_en: 'Wet-mount gill microscopy for ciliates, fungal hyphae, and melanization grading.',
+      lab_te: 'గిల్ వెట్ మౌంట్ మైక్రోస్కోప్ పరీక్ష చేయాలి.',
+    },
+    soft_shell: {
+      name_en: 'Soft Shell / Mineral Stress',
+      name_te: 'మెత్తటి పెంకు / మినరల్ స్ట్రెస్',
+      risk_level: 'moderate',
+      health_score: 68,
+      visible_observations_en: ['Soft or paper-like shell after molting is consistent with calcium, magnesium, or alkalinity imbalance.', 'Poor shell hardening can leave shrimp vulnerable to injury and cannibalism.'],
+      visible_observations_te: ['కుబుసం విడిచిన తర్వాత పెంకు మెత్తగా ఉండటం కాల్షియం/మెగ్నీషియం లోపాన్ని సూచిస్తుంది.', 'పెంకు గట్టిపడకపోవడం రొయ్యలకు దెబ్బతినే ప్రమాదం పెంచుతుంది.'],
+      scientific_note_en: 'This triage points to shell mineral stress rather than a definitive infectious disease.',
+      scientific_note_te: 'ఇది మినరల్ స్ట్రెస్/శరీర కండరాల సమస్యను సూచిస్తుంది; వ్యాధి నిర్ధారణకు ల్యాబ్ పరీక్ష అవసరం.',
+      actions_en: ['Provide lime or calcium-magnesium supplementation, and check alkalinity and salinity stability.', 'Avoid excessive handling during peak heat and improve post-molt recovery conditions.'],
+      actions_te: ['సున్నం మరియు మినరల్ సప్లిమెంట్లు ఇవ్వండి. ఆల్కలైనిటీ మరియు సాలినిటీ స్థాయిని పర్యవేక్షించండి.', 'ఎండ ఎక్కువగా ఉన్నప్పుడు రొయ్యలను ఎక్కువగా నెట్ చేయకండి.'],
+      lab_en: 'Water ionic profile for Ca, Mg, K and alkalinity checks after a soft-shell episode.',
+      lab_te: 'నీటి Ca, Mg, K మరియు ఆల్కలైనిటీ పరీక్ష చేయాలి.',
+    },
+  };
 
-  const healthScore = isWssv ? 18 : isEhp ? 42 : isGut ? 54 : isGill ? 62 : isMuscle ? 68 : 96;
-  const riskGrade = isWssv ? 'CRITICAL' : isEhp || isGut ? 'HIGH' : isGill || isMuscle ? 'MODERATE' : 'OPTIMAL';
-
+  const primary = diseaseMap[bestKey] || diseaseMap.wfs;
   const fallbackResult = {
-    health_index_score: healthScore,
-    risk_grade: riskGrade,
+    health_index_score: primary.health_score,
+    risk_grade: primary.risk_level.toUpperCase(),
     focal_part: focal_area,
-    visible_observations_en: isWssv
-      ? [
-          'Multiple distinct white calcified inclusions (0.5 - 2.0 mm diameter) embedded beneath carapace',
-          'Cuticular cuticle loosening with sudden pink-reddish body and tail fan hyperemia',
-          'Severe behavioral lethargy and aggregate crawling on pond dyke edges',
-        ]
-      : isEhp
-      ? [
-          'Atrophied, pale and shrunken hepatopancreas showing significant tubule degradation',
-          'Empty, transparent midgut and hindgut despite normal feed presence in pond',
-          'Severe microsporidian size disparity and stunted biomass growth',
-        ]
-      : isGill
-      ? [
-          'Dark melanin deposits and brownish debris observed along branchial filaments',
-          'Slight swelling of lamellae indicating possible protozoan or sludge fouling',
-          'Clear cuticle integrity preserved in adjacent carapace regions',
-        ]
-      : isGut
-      ? [
-          'Discontinuous pale or whitish digestive tract with empty hindgut sections',
-          'Absence of dark, well-digested feed coloration in midgut',
-          'Mucus strand accumulation typical of white faeces syndrome (WFS) complex',
-        ]
-      : isMuscle
-      ? [
-          'Milky white opaque patches located along 4th and 5th abdominal segments',
-          'Incomplete hardening of post-molt cuticle (soft-shell tendency)',
-          'Loss of normal translucent muscle clarity due to ionic stress',
-        ]
-      : [
-          'Translucent carapace with regular pigmentation along dorsal segments',
-          'Antennae intact without severe truncation or necrosis',
-          'Full continuous digestive tract indicative of active feeding',
-        ],
-    visible_observations_te: isWssv
-      ? [
-          'తల పెంకు లోపలి భాగంలో గుండ్రని తెల్లటి సున్నపు మచ్చలు (0.5 - 2 మి.మీ) కనిపించాయి',
-          'శరీరం మరియు తోక భాగం పింక్-ఎరుపు రంగులోకి మారడం గమనించబడింది',
-          'తీవ్రమైన నిస్సత్తువతో రొయ్యలు చెరువు గట్ల వెంట తిరుగుతున్న లక్షణాలు ఉన్నాయి',
-        ]
-      : isEhp
-      ? [
-          'కాలేయం (హెపటోపాంక్రియాస్) చిన్నదై పాలిపోయిన స్థితిలో ఉంది',
-          'పేగులో ఆహారం లేకపోవడం మరియు ఎదుగుదల పూర్తిగా ఆగిపోయిన గుర్తులు ఉన్నాయి',
-          'ఒకే చెరువులో రొయ్యల సైజుల్లో తీవ్రమైన వ్యత్యాసం (EHP మైక్రోస్పోరిడియన్ లక్షణం)',
-        ]
-      : isGill
-      ? [
-          'రొయ్య మొప్పలపై నల్లటి మచ్చలు మరియు మడ్డి పేరుకుపోయిన గుర్తులు కనిపించాయి',
-          'చెరువు అడుగున వ్యర్థాలు లేదా ప్రోటోజోవా వల్ల శ్వాస తీసుకోవడంలో ఇబ్బంది ఉండవచ్చు',
-          'పక్కనున్న పెంకు భాగం సాధారణంగానే ఉంది',
-        ]
-      : isGut
-      ? [
-          'పేగులో దాణా లేకపోవడం మరియు అక్కడక్కడ తెల్లటి పదార్థం గమనించబడింది',
-          'మధ్య పేగులో ఆరోగ్యకరమైన నల్లటి జీర్ణక్రియ రంగు కనిపించలేదు',
-          'తెల్ల పేగు వ్యాధి (White Faeces) ప్రాథమిక సంకేతాలుగా ఉన్నాయి',
-        ]
-      : isMuscle
-      ? [
-          'తోక కండరం వద్ద పాలలాంటి తెల్లటి మచ్చలు కనిపించాయి',
-          'కుబుసం విడిచిన తర్వాత పెంకు తగినంత గట్టిపడలేదు (సాఫ్ట్ షెల్ లక్షణం)',
-          'సాధారణ పారదర్శకత తగ్గి కండరం ఒత్తిడిలో ఉన్నట్లు సూచిస్తోంది',
-        ]
-      : [
-          'పారదర్శకమైన పెంకు మరియు సమానమైన సహజ రంగు ఉంది',
-          'మీసాలు, కాళ్లు దెబ్బతినకుండా శుభ్రంగా ఉన్నాయి',
-          'పేగు నిండుగా ఉండి క్రమం తప్పకుండా దాణా తింటున్నట్లు స్పష్టమవుతోంది',
-        ],
-    conditions: isWssv
-      ? [
-          {
-            name_en: 'White Spot Syndrome Virus (WSSV Alert)',
-            name_te: 'వైట్ స్పాట్ వైరస్ వ్యాధి (WSSV)',
-            risk_level: 'critical',
-            confidence_note_en: 'High visual presentation of cuticular spots; emergency biosecurity containment needed',
-            confidence_note_te: 'పెంకు లోపల స్పష్టమైన తెల్ల మచ్చలు; తక్షణ బయోసెక్యూరిటీ జాగ్రత్తలు అవసరం',
-          },
-        ]
-      : isEhp
-      ? [
-          {
-            name_en: 'Enterocytozoon hepatopenaei (EHP Infection)',
-            name_te: 'ఈహెచ్‌పీ మైక్రోస్పోరిడియన్ గ్రోత్ రిటార్డేషన్',
-            risk_level: 'high',
-            confidence_note_en: 'Severe hepatopancreas atrophy with empty gut line typical of EHP microsporidian load',
-            confidence_note_te: 'కాలేయం చిన్నదై ఎదుగుదల తగ్గడం ఈహెచ్‌పీ ప్రాథమిక లక్షణంగా సూచిస్తోంది',
-          },
-        ]
-      : isGill
-      ? [
-          {
-            name_en: 'Black Gill Disease / Sediment Fouling',
-            name_te: 'నల్ల మొప్పల సమస్య (బ్లాక్ గిల్)',
-            risk_level: 'moderate',
-            confidence_note_en: 'Visual screening indicates physical or Fusarium fouling; needs microscope verification',
-            confidence_note_te: 'మొప్పలపై మడ్డి లేదా ఫంగస్ సంకేతం; మైక్రోస్కోప్ పరిశీలన అవసరం',
-          },
-        ]
-      : isGut
-      ? [
-          {
-            name_en: 'White Faeces Syndrome (WFS) / ATM Complex',
-            name_te: 'తెల్ల పేగు వ్యాధి (WFS)',
-            risk_level: 'high',
-            confidence_note_en: 'High visual similarity to transformed microvilli/vermi-form bodies',
-            confidence_note_te: 'గట్ లైనింగ్ తెల్లబడటం గమనించబడింది, తక్షణ శ్రద్ధ అవసరం',
-          },
-        ]
-      : isMuscle
-      ? [
-          {
-            name_en: 'Muscle Necrosis / Mineral Deficit Soft Shell',
-            name_te: 'మజిల్ నెక్రోసిస్ / సాఫ్ట్ షెల్ సమస్య',
-            risk_level: 'moderate',
-            confidence_note_en: 'Commonly triggered by severe sudden DO drops, temperature spikes, or mineral deficiency',
-            confidence_note_te: 'ఆక్సిజన్ లేదా మినరల్స్ తక్కువైనప్పుడు ఇలాంటి తెల్ల కండరం వస్తుంది',
-          },
-        ]
-      : [
-          {
-            name_en: 'Healthy Specimen (Optimal Parameters)',
-            name_te: 'ఆరోగ్యకరమైన స్థితి (ఉత్తమం)',
-            risk_level: 'low',
-            confidence_note_en: 'No major pathological abnormalities visible in current photograph',
-            confidence_note_te: 'ప్రస్తుత చిత్రంలో ఎలాంటి తీవ్రమైన వ్యాధి లక్షణాలు కనిపించలేదు',
-          },
-        ],
-    scientific_safety_note_en:
-      'Diagnostic Safety Notice: An image photograph is an initial triage aid and cannot replace molecular diagnostics. Never use antibiotics based solely on photographic symptoms.',
-    scientific_safety_note_te:
-      'శాస్త్రీయ భద్రతా హెచ్చరిక: ఫోటో స్కానింగ్ అనేది కేవలం ప్రాథమిక పరిశీలన మాత్రమే. సరైన ల్యాబ్ పరీక్షలు లేకుండా ఎట్టి పరిస్థితుల్లోనూ యాంటీబయాటిక్స్ వాడకండి.',
-    suggested_actions_en: isWssv
-      ? [
-          'Immediately seal pond outlet sluice gate to prevent viral escape to neighboring farms',
-          'Cease feeding immediately to avoid toxic organic waste accumulation',
-          'Deploy emergency aerators and notify local authorized fishery extension officer for confirmatory PCR',
-        ]
-      : isEhp
-      ? [
-          'Top-dress feed with organic acid complex (citric/formic acid) and spore-forming Bacillus probiotics',
-          'Perform size-grading cast net sampling to isolate slow-growing biomass',
-          'Maintain rigorous biosecurity and check live feeds for microsporidian spores',
-        ]
-      : isGill
-      ? [
-          'Clean pond bottom sludge via central drain suction',
-          'Increase aerator run time by 2 hours during night and dawn',
-          'Apply 10 ppm potassium permanganate or mild gut/pond probiotic as directed by technician',
-        ]
-      : isGut
-      ? [
-          'Reduce feed by 25% immediately on all check trays',
-          'Incorporate fresh garlic paste (15g/kg feed) and gut probiotics with binder for 5 days',
-          'Check water for blue-green algae blooms or toxic Dinoflagellates',
-        ]
-      : isMuscle
-      ? [
-          'Check morning DO levels and maintain above 5.0 ppm',
-          'Apply agricultural Magnesium Sulphate (MgSO4) and Calcium Carbonate (CaCO3)',
-          'Avoid handling or netting shrimp during midday peak heat',
-        ]
-      : [
-          'Maintain regular feeding schedule according to tray clearance',
-          'Monitor morning DO at 05:00 AM before first feed',
-          'Continue weekly ABW sampling to keep FCR within optimal 1.2 - 1.4 target',
-        ],
-    suggested_actions_te: isWssv
-      ? [
-          'వైరస్ పక్క చెరువులకు పాకకుండా తూము గేట్లను వెంటనే మూసివేయండి',
-          'నీరు కలుషితం కాకుండా దాణా వేయడం వెంటనే నిలిపివేయండి',
-          'అన్ని ఏరియేటర్లు ఆన్ చేసి, తక్షణ PCR నిర్ధారణ కోసం స్థానిక ల్యాబ్‌ను సంప్రదించండి',
-        ]
-      : isEhp
-      ? [
-          'దాణాలో ఆర్గానిక్ యాసిడ్స్ మరియు నాణ్యమైన బాసిల్లస్ ప్రోబయోటిక్స్ కలిపి ఇవ్వండి',
-          'చిన్న రొయ్యలను ప్రత్యేకంగా పరిశీలించి సైజుల వారీగా వర్గీకరించండి',
-          'చెరువు అడుగున డోలమైట్ మరియు ఆక్సిజన్ పెంచి బయోసెక్యూరిటీ పటిష్టం చేయండి',
-        ]
-      : isGill
-      ? [
-          'చెరువు మధ్యలో ఉన్న మడ్డి వ్యర్థాలను డ్రైనేజ్ ద్వారా తొలగించండి',
-          'రాత్రి మరియు తెల్లవారుజామున ఏరియేటర్లను మరో 2 గంటలు అదనంగా నడపండి',
-          'నిపుణుల సలహాతో నాణ్యమైన వాటర్ ప్రోబయోటిక్స్ వేయండి',
-        ]
-      : isGut
-      ? [
-          'వెంటనే అన్ని ట్రేలలో దాణాను 25% తగ్గించండి',
-          'ఉదయం దాణాలో వెల్లుల్లి రసం (15 గ్రా/కిలో) మరియు గట్ ప్రోబయోటిక్స్ కలిపి ఇవ్వండి',
-          'నీటిలో హానికరమైన నాచు (ఆల్గే) లేదా టాక్సిన్స్ ఉన్నాయా చూసుకోండి',
-        ]
-      : isMuscle
-      ? [
-          'ఉదయం ఆక్సిజన్ 5.0 ppm కంటే తగ్గకుండా చూసుకోండి',
-          'మెగ్నీషియం సల్ఫేట్ మరియు అగ్రికల్చరల్ లైమ్ (సున్నం) వేసి మినరల్స్ పెంచండి',
-          'ఎండ ఎక్కువగా ఉన్నప్పుడు రొయ్యలను నెట్ చేయడం లేదా కదిలించడం చేయకండి',
-        ]
-      : [
-          'చెక్ ట్రేలలో దాణా తినే వేగాన్ని బట్టి ఫీడింగ్ కొనసాగించండి',
-          'మొదటి దాణా వేయకముందు ఉదయం 5 గంటలకు ఆక్సిజన్ పరీక్షించండి',
-          'వారపు శాంప్లింగ్ చేసి FCR ను 1.2 - 1.4 మధ్య ఉండేలా నియంత్రించండి',
-        ],
-    lab_test_recommended_en: isWssv
-      ? 'Emergency 2-step nested PCR for WSSV with target amplicon detection at 144 bp.'
-      : isEhp
-      ? 'Immediate 2-step nested PCR for EHP (Enterocytozoon hepatopenaei) and wet mount squash of hepatopancreas tubules.'
-      : isGill
-      ? 'Fresh wet mount gill squash examination under 40x-100x microscope for Zoothamnium or fungal hyphae.'
-      : isGut
-      ? 'Microscopic squash of midgut and TCBS agar bacteriological plating for Vibrio parahaemolyticus.'
-      : isMuscle
-      ? 'Water mineral profile test (Calcium : Magnesium : Potassium ratio) and bacterial TCBS agar culture.'
-      : 'Routine bi-weekly microbiological water and hepatopancreas monitoring.',
-    lab_test_recommended_te: isWssv
-      ? 'వైట్ స్పాట్ (WSSV) నిర్ధారణ కోసం అత్యవసర 2-స్టెప్ నెస్టెడ్ PCR పరీక్ష చేయించండి.'
-      : isEhp
-      ? 'ఈహెచ్‌పీ (EHP) కొరకు ల్యాబ్‌లో 2-స్టెప్ నెస్టెడ్ PCR పరీక్ష మరియు లివర్ స్క్వాష్ మైక్రోస్కోపీ చేయించండి.'
-      : isGill
-      ? 'మొప్పలను 40x-100x మైక్రోస్కోప్ కింద పెట్టి ఫంగస్ లేదా ప్రోటోజోవా పరీక్ష చేయించండి.'
-      : isGut
-      ? 'పేగు భాగం మరియు విబ్రియో బ్యాక్టీరియా పరీక్ష కొరకు TCBS అగార్ కల్చర్ చేయించండి.'
-      : isMuscle
-      ? 'నీటిలోని మినరల్స్ (కాల్షియం, మెగ్నీషియం, పొటాషియం) ల్యాబ్ టెస్ట్ చేయించండి.'
-      : 'ప్రతి పదిహేను రోజులకు ఒకసారి సాధారణ ల్యాబ్ నీటి పరీక్ష చేయించండి.',
+    visible_observations_en: primary.visible_observations_en,
+    visible_observations_te: primary.visible_observations_te,
+    conditions: [{
+      name_en: primary.name_en,
+      name_te: primary.name_te,
+      risk_level: primary.risk_level,
+      confidence_note_en: `This triage result was generated from the selected focal area, pond age, and recent water-quality trend (DO ${recentDo.toFixed(1)} ppm, temp ${recentTemp.toFixed(1)}°C, ammonia ${recentAmmonia.toFixed(2)} ppm).`,
+      confidence_note_te: `ఇది ఎంపిక చేసిన భాగం, చెరువు DOC మరియు తాజా నీటి గుణాల ఆధారంగా అంచనా (DO ${recentDo.toFixed(1)} ppm, ఉష్ణోగ్రత ${recentTemp.toFixed(1)}°C, అమ్మోనియా ${recentAmmonia.toFixed(2)} ppm).`,
+    }],
+    scientific_safety_note_en: primary.scientific_note_en,
+    scientific_safety_note_te: primary.scientific_note_te,
+    suggested_actions_en: primary.actions_en,
+    suggested_actions_te: primary.actions_te,
+    lab_test_recommended_en: primary.lab_en,
+    lab_test_recommended_te: primary.lab_te,
   };
 
   res.json(fallbackResult);
