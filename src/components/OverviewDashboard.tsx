@@ -113,7 +113,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
       <div className="relative overflow-hidden rounded-3xl border border-emerald-200 dark:border-emerald-800/60 shadow-lg group">
         <div className="absolute inset-0 z-0">
           <img
-            src="/src/assets/images/vannamei_farm_hero_1793641197430.jpg"
+            src="/images/vannamei_farm_hero_1793641197430.jpg"
             alt="Vannamei Shrimp Farm in Andhra Pradesh"
             className="w-full h-full object-cover object-center brightness-90 group-hover:scale-105 transition-transform duration-700"
           />
@@ -450,7 +450,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
           <div className="aspect-16/9 rounded-xl overflow-hidden mb-3 border border-emerald-100 dark:border-slate-800">
             <img
-              src="/src/assets/images/vannamei_fresh_shrimp_1793641197038.jpg"
+              src="/images/vannamei_fresh_shrimp_1793641197038.jpg"
               alt="Healthy Vannamei Specimen"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />

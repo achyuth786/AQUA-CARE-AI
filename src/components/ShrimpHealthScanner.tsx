@@ -295,7 +295,7 @@ const DISEASE_ATLAS = [
     severity: 'moderate',
     severity_label: 'Moderate Alert / మధ్యస్థ ప్రమాదం',
     color: 'blue',
-    image_url: '/src/assets/images/shrimp_necrosis_macro_1793643858324.jpg',
+    image_url: '/images/shrimp_necrosis_macro_1793643858324.jpg',
     pathogen: 'Infectious Myonecrosis Virus (Totiviridae) / Sudden thermal shock & hypoxia',
     pathogen_te: 'IMNV వైరస్ లేదా ఆకస్మిక ఎండ వేడిమి, ఆక్సిజన్ లేమి',
     oie_listed: true,
