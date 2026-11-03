@@ -12,6 +12,7 @@ import { ShrimpHealthScanner } from './components/ShrimpHealthScanner.tsx';
 import { AiAssistantView } from './components/AiAssistantView.tsx';
 import { HarvestSimulatorView } from './components/HarvestSimulatorView.tsx';
 import { MarketPriceTracker } from './components/MarketPriceTracker.tsx';
+import { WeatherRiskView } from './components/WeatherRiskView.tsx';
 import { FastLogModal } from './components/FastLogModal.tsx';
 import { AuthModal, UserProfile } from './components/AuthModal.tsx';
 import { AddPondModal } from './components/AddPondModal.tsx';
@@ -451,6 +452,9 @@ function AppContent() {
               onSavePrice={handleSavePrice}
               ponds={ponds}
             />
+          )}
+          {currentView === 'weather' && (
+            <WeatherRiskView ponds={ponds} selectedPondId={selectedPondId} />
           )}
         </main>
       </div>

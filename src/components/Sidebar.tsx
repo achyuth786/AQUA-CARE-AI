@@ -12,7 +12,8 @@ import {
   IndianRupee,
   ShieldCheck,
   CircleAlert,
-  Sparkles
+  Sparkles,
+  CloudSun
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'feed', label: t('nav_feed'), icon: UtensilsCrossed },
     { id: 'growth', label: t('nav_growth'), icon: TrendingUp },
     { id: 'scanner', label: t('nav_scanner'), icon: ScanEye, isSpecial: true },
+    { id: 'weather', label: 'Weather Risk', icon: CloudSun },
     { id: 'assistant', label: t('nav_assistant'), icon: BotMessageSquare, isAi: true },
     { id: 'harvest', label: t('nav_harvest'), icon: Calculator },
     { id: 'prices', label: t('nav_prices'), icon: IndianRupee },

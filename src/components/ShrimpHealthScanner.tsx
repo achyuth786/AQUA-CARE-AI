@@ -392,6 +392,7 @@ export const ShrimpHealthScanner: React.FC<ShrimpHealthScannerProps> = ({
   const [pondId, setPondId] = useState(selectedPondId === 'all' ? ponds[0]?.id || 'pond-01' : selectedPondId);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
   const [showHealthyBaseline, setShowHealthyBaseline] = useState(false);
   const [selectedHotspot, setSelectedHotspot] = useState<AnatomyHotspot | null>(ANATOMY_HOTSPOTS[0]);
@@ -430,17 +431,27 @@ export const ShrimpHealthScanner: React.FC<ShrimpHealthScannerProps> = ({
     const hp = ANATOMY_HOTSPOTS.find((h) => h.id === sample.focal_area) || ANATOMY_HOTSPOTS[0];
     setSelectedHotspot(hp);
     setScanResult(null);
+    setScanError(null);
     setShowHealthyBaseline(false);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        setScanError('Please upload a JPG, PNG, WEBP, or other image file.');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        setScanError('Please use an image smaller than 8 MB for a reliable scan.');
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result as string);
         setSelectedSampleId('custom-upload');
         setScanResult(null);
+        setScanError(null);
       };
       reader.readAsDataURL(file);
     }
@@ -449,6 +460,7 @@ export const ShrimpHealthScanner: React.FC<ShrimpHealthScannerProps> = ({
   const handleRunScan = async () => {
     setIsScanning(true);
     setScanResult(null);
+    setScanError(null);
     try {
       const response = await fetch('/api/gemini/screen-shrimp', {
         method: 'POST',
@@ -461,9 +473,11 @@ export const ShrimpHealthScanner: React.FC<ShrimpHealthScannerProps> = ({
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'The scan could not be completed.');
       setScanResult(data);
     } catch (err) {
       console.error('Scan error:', err);
+      setScanError(err instanceof Error ? err.message : 'The scan could not be completed.');
     } finally {
       setIsScanning(false);
     }
@@ -1159,6 +1173,13 @@ Authorized Signatory: Dr. K. Rao, Lead Aquatic Animal Health Officer
                     </p>
                   </div>
                 </div>
+              </div>
+            ) : scanError ? (
+              <div className="p-8 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 flex flex-col items-center justify-center text-center space-y-3 min-h-[420px]">
+                <ShieldAlert className="w-10 h-10 text-rose-600" />
+                <h3 className="text-base font-bold text-rose-900 dark:text-rose-200">Scan needs attention</h3>
+                <p className="max-w-md text-xs leading-relaxed text-rose-800 dark:text-rose-300">{scanError}</p>
+                <p className="max-w-md text-[11px] text-slate-600 dark:text-slate-400">Use a clear close-up of one shrimp in good light. Photo screening suggests visible signs only; confirm suspected disease with a qualified aquatic-animal laboratory.</p>
               </div>
             ) : (
               <div className="p-10 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-4 min-h-[420px]">

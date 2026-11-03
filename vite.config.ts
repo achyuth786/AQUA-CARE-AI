@@ -8,7 +8,7 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     // Vercel serves files from public/ itself. Keep existing source assets when
     // its build writes the Vite output there.
-    publicDir: false,
+    publicDir: false as const,
     build: {
       emptyOutDir: process.env.VERCEL ? false : undefined,
     },

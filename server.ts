@@ -37,6 +37,7 @@ let alerts = [...initialAlerts];
 // Initialize Google GenAI client
 let ai: GoogleGenAI | null = null;
 const apiKey = process.env.GEMINI_API_KEY;
+const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.trim().length > 15) {
   ai = new GoogleGenAI({
     apiKey: apiKey.trim(),
@@ -53,6 +54,79 @@ if (apiKey && apiKey !== 'MY_GEMINI_API_KEY' && apiKey.trim().length > 15) {
 // Lightweight endpoint for hosting platforms and uptime monitors.
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok', service: 'aquacare-ai' });
+});
+
+app.get('/api/weather-risk', async (req, res) => {
+  const latitude = Number(req.query.lat);
+  const longitude = Number(req.query.lon);
+  const pond = ponds.find((item) => item.id === req.query.pond_id) || ponds[0];
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return res.status(400).json({ error: 'Valid latitude and longitude are required.' });
+  }
+
+  try {
+    const weatherUrl = new URL('https://api.open-meteo.com/v1/forecast');
+    weatherUrl.search = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+      timezone: 'auto',
+      forecast_days: '2',
+      current: 'temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m',
+      hourly: 'temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m',
+    }).toString();
+    const weatherResponse = await fetch(weatherUrl, { signal: AbortSignal.timeout(8000) });
+    if (!weatherResponse.ok) throw new Error(`Weather provider returned ${weatherResponse.status}`);
+    const weather = await weatherResponse.json();
+    const hourly = weather.hourly;
+    const next24 = Array.from({ length: Math.min(24, hourly.time?.length || 0) }, (_, index) => ({
+      temperature: Number(hourly.temperature_2m[index]),
+      humidity: Number(hourly.relative_humidity_2m[index]),
+      rainChance: Number(hourly.precipitation_probability[index]),
+      rain: Number(hourly.precipitation[index]),
+      wind: Number(hourly.wind_speed_10m[index]),
+      gust: Number(hourly.wind_gusts_10m[index]),
+    }));
+    const maximum = (key: string) => Math.max(...next24.map((entry: any) => entry[key] || 0));
+    const minimum = (key: string) => Math.min(...next24.map((entry: any) => entry[key] || 0));
+    const forecast = {
+      temperature_now_c: Number(weather.current?.temperature_2m),
+      humidity_now_pct: Number(weather.current?.relative_humidity_2m),
+      wind_now_kmh: Number(weather.current?.wind_speed_10m),
+      temperature_max_c: maximum('temperature'),
+      temperature_min_c: minimum('temperature'),
+      rain_probability_max_pct: maximum('rainChance'),
+      rain_total_mm: Number(next24.reduce((sum: number, entry: any) => sum + entry.rain, 0).toFixed(1)),
+      wind_gust_max_kmh: maximum('gust'),
+    };
+    const risks: string[] = [];
+    if (forecast.rain_total_mm >= 15 || forecast.rain_probability_max_pct >= 75) risks.push('Heavy-rain dilution and overflow risk');
+    if (forecast.wind_gust_max_kmh >= 40) risks.push('High wind may reduce surface feeding accuracy and damage nets');
+    if (forecast.temperature_max_c >= 34) risks.push('High afternoon temperature can increase oxygen demand');
+    if (forecast.temperature_min_c <= 22) risks.push('Cool night conditions can reduce feeding response');
+    const riskLevel = risks.length >= 2 ? 'high' : risks.length === 1 ? 'moderate' : 'low';
+    const fallbackActions = [
+      'Check pond water level, sluice screens, power supply and aerators before rain or strong wind.',
+      'Measure dissolved oxygen before sunrise and reduce feed only if tray response or water quality indicates stress.',
+      'After significant rain, recheck salinity, pH, alkalinity and ammonia before making treatment decisions.',
+    ];
+    let advisory = { summary: risks.length ? risks.join('. ') : 'No major pond-weather trigger is forecast in the next 24 hours.', actions: fallbackActions };
+
+    if (ai) {
+      const prompt = `Act as a cautious vannamei shrimp farm weather advisor. Use only this 24-hour forecast and do not invent weather values. Pond: ${pond.name}, DOC ${pond.doc}, ABW ${pond.current_abw_g}g. Forecast: ${JSON.stringify(forecast)}. Return strict JSON: {"summary":"one short sentence","actions":["three concise practical actions"]}. No medicine, antibiotic, chemical dose, or disease diagnosis.`;
+      const geminiResponse = await ai.models.generateContent({
+        model: geminiModel,
+        contents: prompt,
+        config: { responseMimeType: 'application/json' },
+      });
+      const parsed = JSON.parse(geminiResponse.text || '{}');
+      if (parsed.summary && Array.isArray(parsed.actions)) advisory = parsed;
+    }
+    res.json({ location: { latitude, longitude, timezone: weather.timezone }, pond_id: pond.id, forecast, risk_level: riskLevel, risks, ...advisory, ai_enabled: Boolean(ai) });
+  } catch (error) {
+    console.error('Weather-risk API error:', error);
+    res.status(502).json({ error: 'Unable to load weather risk right now. Please try again shortly.' });
+  }
 });
 
 // Get Farm & Ponds
@@ -517,7 +591,7 @@ Output strictly valid JSON with this structure:
 }`;
 
       const visionPromise = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: geminiModel,
         contents: {
           parts: [
             {
@@ -548,7 +622,16 @@ Output strictly valid JSON with this structure:
     console.error('Gemini vision API error:', error.message);
   }
 
-  // Robust Clinical Fallback Rule Engine covering 6 major aquaculture pathology profiles
+  // Sample images carry known labels. A real upload must never be given a
+  // fabricated "healthy" result when Gemini is unavailable.
+  const isKnownSample = typeof image === 'string' && /white-spot|WSSV|wssv|sample-ehp|shrimp_ehp|black-gill|black_gill|white-gut|wfs|soft-shell|necrosis|EF4444|8B5CF6/.test(image);
+  if (!isKnownSample) {
+    return res.status(503).json({
+      error: 'AI image analysis is unavailable. Add a valid GEMINI_API_KEY and try again; a photo alone cannot confirm shrimp disease.',
+    });
+  }
+
+  // Labeled demonstration images only: deterministic educational fallback.
   const isWssv = image?.includes('white-spot') || image?.includes('WSSV') || image?.includes('wssv') || image?.includes('EF4444');
   const isEhp = image?.includes('sample-ehp') || image?.includes('shrimp_ehp') || focal_area === 'hepatopancreas' || image?.includes('8B5CF6');
   const isGill = focal_area === 'gills' || image?.includes('black-gill') || image?.includes('black_gill');
@@ -864,7 +947,7 @@ Always ground your answers in the farmer's real pond context provided below when
 ${farmContext}`;
 
       const generatePromise = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: geminiModel,
         contents: message,
         config: {
           systemInstruction,
